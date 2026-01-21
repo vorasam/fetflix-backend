@@ -1,26 +1,25 @@
 package com.dev.upload;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.UUID;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/upload")
-@CrossOrigin(origins = "http://localhost:4200")
+@RequiredArgsConstructor
 public class UploadController {
 
-    private static final String UPLOAD_DIR = "uploads";
+    private final Cloudinary cloudinary;
 
-    @PostMapping
-    public ResponseEntity<String> uploadFile(
+    // ✅ IMAGE UPLOAD
+    @PostMapping("/image")
+    public ResponseEntity<?> uploadImage(
             @RequestParam("file") MultipartFile file
     ) throws IOException {
 
@@ -28,22 +27,33 @@ public class UploadController {
             return ResponseEntity.badRequest().body("File is empty");
         }
 
-        // ✅ Create upload directory if missing
-        Path uploadPath = Paths.get(UPLOAD_DIR);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+        Map uploadResult = cloudinary.uploader().upload(
+                file.getBytes(),
+                ObjectUtils.asMap("resource_type", "image")
+        );
+
+        String url = uploadResult.get("secure_url").toString();
+
+        return ResponseEntity.ok(Map.of("url", url));
+    }
+
+    // ✅ VIDEO UPLOAD
+    @PostMapping("/video")
+    public ResponseEntity<?> uploadVideo(
+            @RequestParam("file") MultipartFile file
+    ) throws IOException {
+
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body("File is empty");
         }
 
-        // ✅ Clean filename + prevent overwrite
-        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
-        String filename = UUID.randomUUID() + "_" + originalFilename;
+        Map uploadResult = cloudinary.uploader().upload(
+                file.getBytes(),
+                ObjectUtils.asMap("resource_type", "video")
+        );
 
-        Path filePath = uploadPath.resolve(filename);
+        String url = uploadResult.get("secure_url").toString();
 
-        // ✅ Save file
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-        // ✅ Return only filename
-        return ResponseEntity.ok(filename);
+        return ResponseEntity.ok(Map.of("url", url));
     }
 }
