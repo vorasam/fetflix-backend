@@ -1,0 +1,134 @@
+package com.dev.episode;
+
+import com.dev.cast.CastService;
+import com.dev.season.Season;
+import com.dev.exception.ResourceNotFoundException;
+import com.dev.season.SeasonRepository;
+import com.dev.genre.GenreService;
+import com.dev.scene.SceneService;
+import com.dev.show.Show;
+import lombok.AllArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.stream.Collectors;
+import java.util.List;
+
+@Service
+@AllArgsConstructor
+public class EpisodeService {
+
+    private final EpisodeRepository epRepo;
+    private final SeasonRepository seasonRepo;
+    private final CastService castService;
+    private final GenreService genreService;
+    private final SceneService sceneService;
+
+    public Episode addEpisode(Long seasonId, EpisodeRequest req) {
+        Season season = seasonRepo.findById(seasonId)
+                .orElseThrow(() -> new ResourceNotFoundException("Season not found: " + seasonId));
+
+        Episode ep = new Episode();
+        ep.setEpisodeNumber(req.getEpisodeNumber());
+        ep.setTitle(req.getTitle());
+        ep.setDescription(req.getDescription());
+        ep.setReleaseYear(req.getReleaseYear());
+        ep.setAgeRating(req.getAgeRating());
+        ep.setSeason(season);
+        ep.setEnable(req.isEnable());
+        ep.setPoster(req.getPoster());
+        ep.setEpisodeVideo(req.getEpisodeVideo());
+
+        ep.setCastList(
+                req.getCast().stream()
+                        .map(castService::getOrCreate)
+                        .collect(Collectors.toSet())
+        );
+
+        ep.setGenres(
+                req.getGenres().stream()
+                        .map(genreService::getOrCreate)
+                        .collect(Collectors.toSet())
+        );
+
+        ep.setScenes(
+                req.getScenes().stream()
+                        .map(sceneService::getOrCreate)
+                        .collect(Collectors.toSet())
+        );
+
+        return epRepo.save(ep);
+    }
+
+    public List<Episode> getEpisodes(Long seasonId) {
+        Season season = seasonRepo.findById(seasonId)
+                .orElseThrow(() -> new ResourceNotFoundException("Season not found: " + seasonId));
+
+        return epRepo.findAll()
+                .stream()
+                .filter(e -> e.getSeason().getId().equals(seasonId))
+                .collect(Collectors.toList());
+    }
+
+    public Episode getEpisodeById(Long episodeId){
+        return epRepo.findById(episodeId).orElseThrow(() -> new ResourceNotFoundException("Episode not found: "+episodeId));
+    }
+
+    // UPDATE EPISODE
+    public Episode updateEpisode(Long episodeId, EpisodeRequest req) {
+        Episode ep = epRepo.findById(episodeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Episode not found: " + episodeId));
+
+        ep.setEpisodeNumber(req.getEpisodeNumber());
+        ep.setTitle(req.getTitle());
+        ep.setDescription(req.getDescription());
+        ep.setReleaseYear(req.getReleaseYear());
+        ep.setAgeRating(req.getAgeRating());
+        ep.setEnable(req.isEnable());
+        ep.setPoster(req.getPoster());
+        ep.setEpisodeVideo(req.getEpisodeVideo());
+
+
+        ep.setCastList(req.getCast().stream()
+                .map(castService::getOrCreate)
+                .collect(Collectors.toSet()));
+
+        ep.setGenres(req.getGenres().stream()
+                .map(genreService::getOrCreate)
+                .collect(Collectors.toSet()));
+
+        ep.setScenes(req.getScenes().stream()
+                .map(sceneService::getOrCreate)
+                .collect(Collectors.toSet()));
+
+        return epRepo.save(ep);
+    }
+
+    // DELETE EPISODE
+    public void deleteEpisode(Long episodeId) {
+        Episode ep = epRepo.findById(episodeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Episode not found: " + episodeId));
+
+        epRepo.delete(ep);
+    }
+
+    public void episodeEnabled(Long id) {
+        Episode episode = epRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Episode not found"));
+
+        Season season = episode.getSeason();
+        Show show = season.getShow();
+
+        boolean newStatus = !episode.isEnable();
+
+        // 🔒 RULE: cannot ENABLE episode if season or show disabled
+        if (newStatus && (!season.isEnabled() || !show.isEnabled() )) {
+            throw new IllegalStateException(
+                    "Cannot enable episode while season or show is disabled"
+            );
+        }
+
+        episode.setEnable(newStatus);
+        epRepo.save(episode);
+    }
+
+}
