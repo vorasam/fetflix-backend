@@ -15,7 +15,7 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of("http://localhost:4200","http://localhost:4300","https://fetflix-backend.onrender.com"));
+        config.setAllowedOrigins(List.of("http://localhost:4200","http://localhost:4300","https://fetflix-backend.onrender.com","https://fetflix-admin.onrender.com"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
@@ -27,3 +27,4 @@ public class CorsConfig {
         return source;
     }
 }
+
