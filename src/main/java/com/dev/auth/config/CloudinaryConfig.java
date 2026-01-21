@@ -3,6 +3,7 @@ package com.dev.auth.config;
 import com.cloudinary.Cloudinary;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,4 +25,5 @@ public Cloudinary cloudinary(
 }
 
 }
+
 
