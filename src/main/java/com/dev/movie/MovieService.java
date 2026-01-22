@@ -44,7 +44,7 @@ public class MovieService {
                 .orElseThrow(() -> new ResourceNotFoundException("Movie not found:"+id));
     }
 
-    public Movie updateMovie(Long id, MovieRequest req){
+    public Movie updateMovie(Long id, MovieRequest req, MultipartFile file, MultipartFile image){
 
            Movie movie = repo.findById(id)
               .orElseThrow(() -> new ResourceNotFoundException("Movie not found: " + id));;
