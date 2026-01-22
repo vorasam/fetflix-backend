@@ -1,11 +1,17 @@
 package com.dev.movie;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.dev.cast.CastService;
 import com.dev.genre.GenreService;
 import com.dev.exception.ResourceNotFoundException;
 import com.dev.scene.SceneService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import java.util.List;
@@ -17,10 +23,15 @@ public class MovieService {
     private final CastService castService;
     private final GenreService genreService;
     private final SceneService sceneService;
+    private final Cloudinary cloudinary;
 
-    public Movie createMovie(MovieRequest req){
+
+    public Movie createMovie(MovieRequest req, MultipartFile file, MultipartFile image) throws IOException {
+        System.out.println("Creating movie");
         Movie movie = new Movie();
-        mapField(movie,req);
+
+
+        mapField(movie,req,file,image);
         return repo.save(movie);
     }
 
@@ -34,34 +45,16 @@ public class MovieService {
     }
 
     public Movie updateMovie(Long id, MovieRequest req){
-      Movie movie = repo.findById(id)
-              .orElseThrow(() -> new ResourceNotFoundException("Movie not found: " + id));
-        movie.setTitle(req.getTitle());
-        movie.setDescription(req.getDescription());
-        movie.setReleaseYear(req.getReleaseYear());
-        movie.setAgeRating(req.getAgeRating());
-        movie.setDurationMinutes(req.getDurationMinutes());
-        movie.setPoster(req.getPoster());
-        movie.setEnabled(req.isEnabled());
-        movie.setMovieVideo(req.getMovieVideo());
-        movie.setCastList(
-                req.getCast().stream()
-                        .map(castService::getOrCreate)
-                        .collect(Collectors.toList())
-        );
 
-        movie.setGenres(
-                req.getGenres().stream()
-                        .map(genreService::getOrCreate)
-                        .collect(Collectors.toList())
-        );
+           Movie movie = repo.findById(id)
+              .orElseThrow(() -> new ResourceNotFoundException("Movie not found: " + id));;
 
-        movie.setScenes(
-                req.getScenes().stream()
-                        .map(sceneService::getOrCreate)
-                        .collect(Collectors.toList())
-        );
+
+        mapField(movie,req,file,image);
         return repo.save(movie);
+
+        
+      
     }
 
 
@@ -72,16 +65,28 @@ public class MovieService {
     }
 
 
-    private void mapField(Movie movie, MovieRequest req) {
+    private void mapField(Movie movie, MovieRequest req,MultipartFile file,MultipartFile image) throws IOException {
+        System.out.println("call map field");
+        Map uploadResult = cloudinary.uploader().upload(
+                file.getBytes(),
+                ObjectUtils.asMap("resource_type", "video")
+        );
+        String url = uploadResult.get("secure_url").toString();
 
+        Map uploadResultImage = cloudinary.uploader().upload(
+                image.getBytes(),
+                ObjectUtils.asMap("resource_type", "image")
+        );
+
+        String urlImage = uploadResultImage.get("secure_url").toString();
         movie.setTitle(req.getTitle());
         movie.setDescription(req.getDescription());
         movie.setReleaseYear(req.getReleaseYear());
         movie.setAgeRating(req.getAgeRating());
         movie.setDurationMinutes(req.getDurationMinutes());
-        movie.setPoster(req.getPoster());
+        movie.setPoster(urlImage);
         movie.setEnabled(req.isEnabled());
-        movie.setMovieVideo(req.getMovieVideo());
+        movie.setMovieVideo(url);
         movie.setCastList(
                 req.getCast().stream()
                         .map(castService::getOrCreate)
@@ -99,6 +104,8 @@ public class MovieService {
                         .map(sceneService::getOrCreate)
                         .collect(Collectors.toList())
         );
+
+        System.out.println(movie);
     }
 
     public void movieEnabled(Long id, boolean enabled) {
