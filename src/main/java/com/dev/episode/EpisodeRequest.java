@@ -33,11 +33,9 @@ public class EpisodeRequest {
     @NotNull
     private List<String> scenes;
 
-    @NotNull(message = "Poster cannot be null")
     private String poster;
 
     private boolean enable = true;
 
-    @NotNull(message = "Video cannot be null")
     private String episodeVideo;
 }
