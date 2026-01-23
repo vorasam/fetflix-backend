@@ -32,7 +32,6 @@ public class ShowRequest {
     @NotNull(message = "Scenes cannot be null")
     private List<String> scenes;
 
-    @NotNull(message = "Poster cannot be null")
     private String poster;
 
     @NotNull(message = "Give show Access")

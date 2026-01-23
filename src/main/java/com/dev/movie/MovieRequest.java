@@ -35,13 +35,13 @@ public class MovieRequest {
     @NotNull(message = "Scenes cannot be null")
     private List<String> scenes;
 
-    @NotNull(message = "Poster cannot be null")
+//    @NotNull(message = "Poster cannot be null")
     private String poster;
 
     @NotNull(message = "Give Access to movie")
     private boolean enabled = true;
 
-    @NotNull(message = "Video cannot be null")
+//    @NotNull(message = "Video cannot be null")
     private String movieVideo;
 
 }

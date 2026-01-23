@@ -33,7 +33,7 @@ public class ApiSecurityConfig {
 
         http
                 // 🔥 ONLY these paths
-                .securityMatcher("/auth/admin/**", "/admin/api/**","/api/**")
+                .securityMatcher("/auth/admin/**", "/admin/api/**","/api/**","/upload/**")
 
                 .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
@@ -48,6 +48,11 @@ public class ApiSecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
+                        // 🔥 PRE-FLIGHT
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // 🔥 UPLOAD
+                        .requestMatchers("/upload/**").permitAll()
                         .requestMatchers(
                                 "/api/movies/**",
                                 "/api/shows/**",
