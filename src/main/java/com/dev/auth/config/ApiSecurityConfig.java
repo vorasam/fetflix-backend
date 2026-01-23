@@ -13,9 +13,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @Configuration
 @RequiredArgsConstructor
+@EnableWebMvc
 @Order(1) // 🔥 VERY IMPORTANT
 public class ApiSecurityConfig {
 
@@ -33,7 +35,10 @@ public class ApiSecurityConfig {
 
         http
                 // 🔥 ONLY these paths
-                .securityMatcher("/auth/admin/**", "/admin/api/**","/api/**","/upload/**")
+                .securityMatcher("/auth/admin/**", "/admin/api/**","/api/**","/upload/**", "/v3/api-docs/**","/v2/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-resources/**",
+                        "/webjars/**")
 
                 .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
@@ -53,6 +58,14 @@ public class ApiSecurityConfig {
 
                         // 🔥 UPLOAD
                         .requestMatchers("/upload/**").permitAll()
+                        // 🔥 SWAGGER
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/v2/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-resources/**",
+                                "/webjars/**"
+                        ).permitAll()
                         .requestMatchers(
                                 "/api/movies/**",
                                 "/api/shows/**",
