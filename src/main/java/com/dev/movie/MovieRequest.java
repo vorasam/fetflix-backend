@@ -35,19 +35,15 @@ public class MovieRequest {
     @NotNull(message = "Scenes cannot be null")
     private List<String> scenes;
 
-<<<<<<< HEAD
 //    @NotNull(message = "Poster cannot be null")
-=======
->>>>>>> c19313210e0f6f6ff12b50008973644501b4e94c
+
     private String poster;
 
     @NotNull(message = "Give Access to movie")
     private boolean enabled = true;
 
-<<<<<<< HEAD
 //    @NotNull(message = "Video cannot be null")
-=======
->>>>>>> c19313210e0f6f6ff12b50008973644501b4e94c
+
     private String movieVideo;
 
 }
