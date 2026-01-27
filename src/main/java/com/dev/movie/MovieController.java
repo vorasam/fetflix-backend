@@ -19,11 +19,11 @@ public class MovieController {
     @PostMapping(value = "/create", consumes = "multipart/form-data")
     public Movie createMovie(
             @Valid @RequestPart("movie") MovieRequest req,
-            @RequestPart("file") MultipartFile file,
-            @RequestPart("image") MultipartFile image
+            @RequestPart(value = "image", required = false) MultipartFile image
     ) throws IOException {
-        return service.createMovie(req, file, image);
+        return service.createMovie(req, image);
     }
+
 
     // ===================== ENABLE / DISABLE =====================
     @PatchMapping("/{id}/status")
@@ -51,11 +51,11 @@ public class MovieController {
     public Movie updateMovie(
             @PathVariable Long id,
             @Valid @RequestPart("movie") MovieRequest req,
-            @RequestPart(required = false) MultipartFile file,
-            @RequestPart(required = false) MultipartFile image
+            @RequestPart(value = "image", required = false) MultipartFile image
     ) throws IOException {
-        return service.updateMovie(id, req, file, image);
+        return service.updateMovie(id, req, image);
     }
+
 
     // ===================== DELETE =====================
     @DeleteMapping("/{id}")

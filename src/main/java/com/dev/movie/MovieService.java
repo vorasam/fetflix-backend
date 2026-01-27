@@ -26,16 +26,12 @@ public class MovieService {
     private final Cloudinary cloudinary;
 
     // ===================== CREATE =====================
-    public Movie createMovie(
-            MovieRequest req,
-            MultipartFile file,
-            MultipartFile image
-    ) throws IOException {
-
+    public Movie createMovie(MovieRequest req, MultipartFile image) throws IOException {
         Movie movie = new Movie();
-        mapFields(movie, req, file, image);
+        mapFields(movie, req, image);
         return repo.save(movie);
     }
+
 
     // ===================== GET ALL =====================
     public List<Movie> getAllMovies() {
@@ -50,20 +46,15 @@ public class MovieService {
     }
 
     // ===================== UPDATE =====================
-    public Movie updateMovie(
-            Long id,
-            MovieRequest req,
-            MultipartFile file,
-            MultipartFile image
-    ) throws IOException {
-
+    public Movie updateMovie(Long id, MovieRequest req, MultipartFile image) throws IOException {
         Movie movie = repo.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Movie not found: " + id));
 
-        mapFields(movie, req, file, image);
+        mapFields(movie, req, image);
         return repo.save(movie);
     }
+
 
     // ===================== DELETE =====================
     public void deleteMovie(Long id) {
@@ -85,18 +76,8 @@ public class MovieService {
     private void mapFields(
             Movie movie,
             MovieRequest req,
-            MultipartFile file,
             MultipartFile image
     ) throws IOException {
-
-        // ---------- VIDEO UPLOAD ----------
-        if (file != null && !file.isEmpty()) {
-            Map<?, ?> videoUpload = cloudinary.uploader().upload(
-                    file.getBytes(),
-                    ObjectUtils.asMap("resource_type", "video")
-            );
-            movie.setMovieVideo(videoUpload.get("secure_url").toString());
-        }
 
         // ---------- IMAGE UPLOAD ----------
         if (image != null && !image.isEmpty()) {
@@ -114,6 +95,11 @@ public class MovieService {
         movie.setAgeRating(req.getAgeRating());
         movie.setDurationMinutes(req.getDurationMinutes());
         movie.setEnabled(req.isEnabled());
+
+        // ---------- VIDEO URL (FROM FRONTEND) ----------
+        if (req.getMovieVideo() != null && !req.getMovieVideo().isBlank()) {
+            movie.setMovieVideo(req.getMovieVideo());
+        }
 
         // ---------- CAST ----------
         movie.setCastList(
@@ -136,4 +122,5 @@ public class MovieService {
                         .collect(Collectors.toList())
         );
     }
+
 }
