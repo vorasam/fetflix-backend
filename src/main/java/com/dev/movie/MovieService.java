@@ -26,12 +26,16 @@ public class MovieService {
     private final Cloudinary cloudinary;
 
     // ===================== CREATE =====================
-    public Movie createMovie(MovieRequest req, MultipartFile image) throws IOException {
+    public Movie createMovie(
+            MovieRequest req,
+            MultipartFile file,
+            MultipartFile image
+    ) throws IOException {
+
         Movie movie = new Movie();
-        mapFields(movie, req, image);
+        mapFields(movie, req, file, image);
         return repo.save(movie);
     }
-
 
     // ===================== GET ALL =====================
     public List<Movie> getAllMovies() {
@@ -46,15 +50,20 @@ public class MovieService {
     }
 
     // ===================== UPDATE =====================
-    public Movie updateMovie(Long id, MovieRequest req, MultipartFile image) throws IOException {
+    public Movie updateMovie(
+            Long id,
+            MovieRequest req,
+            MultipartFile file,
+            MultipartFile image
+    ) throws IOException {
+
         Movie movie = repo.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Movie not found: " + id));
 
-        mapFields(movie, req, image);
+        mapFields(movie, req, file, image);
         return repo.save(movie);
     }
-
 
     // ===================== DELETE =====================
     public void deleteMovie(Long id) {
@@ -76,9 +85,36 @@ public class MovieService {
     private void mapFields(
             Movie movie,
             MovieRequest req,
+            MultipartFile file,
             MultipartFile image
     ) throws IOException {
 
+        // ---------- VIDEO UPLOAD ----------
+// ---------- VIDEO UPLOAD ----------
+        // In MovieService.mapFields()
+        // ---------- VIDEO UPLOAD ----------
+        if (file != null && !file.isEmpty()) {
+            Map<String, Object> options = ObjectUtils.asMap(
+                    "resource_type", "video",
+                    "folder", "fetflix/videos",
+                    "chunk_size", 6000000 // 6MB chunks - critical for large files!
+            );
+
+            // Use InputStream for proper chunked upload
+            Map uploadResult = cloudinary.uploader()
+                    .uploadLarge(file.getInputStream(), options);
+
+            // Store just the URL (simplest approach)
+            movie.setMovieVideo(uploadResult.get("secure_url").toString());
+
+            // OR if you need both URL and publicId, use proper JSON:
+            // String videoData = String.format(
+            //     "{\"url\":\"%s\",\"publicId\":\"%s\"}",
+            //     uploadResult.get("secure_url"),
+            //     uploadResult.get("public_id")
+            // );
+            // movie.setMovieVideo(videoData);
+        }
         // ---------- IMAGE UPLOAD ----------
         if (image != null && !image.isEmpty()) {
             Map<?, ?> imageUpload = cloudinary.uploader().upload(
@@ -95,11 +131,6 @@ public class MovieService {
         movie.setAgeRating(req.getAgeRating());
         movie.setDurationMinutes(req.getDurationMinutes());
         movie.setEnabled(req.isEnabled());
-
-        // ---------- VIDEO URL (FROM FRONTEND) ----------
-        if (req.getMovieVideo() != null && !req.getMovieVideo().isBlank()) {
-            movie.setMovieVideo(req.getMovieVideo());
-        }
 
         // ---------- CAST ----------
         movie.setCastList(
@@ -122,5 +153,4 @@ public class MovieService {
                         .collect(Collectors.toList())
         );
     }
-
 }
