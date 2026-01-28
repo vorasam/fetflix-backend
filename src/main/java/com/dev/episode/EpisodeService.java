@@ -1,5 +1,8 @@
 package com.dev.episode;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.dev.cast.CastService;
@@ -10,16 +13,19 @@ import com.dev.genre.GenreService;
 import com.dev.scene.SceneService;
 import com.dev.show.Show;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.List;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class EpisodeService {
 
     private final EpisodeRepository epRepo;
@@ -28,6 +34,10 @@ public class EpisodeService {
     private final GenreService genreService;
     private final SceneService sceneService;
     private final Cloudinary cloudinary;
+    private final AmazonS3 storjClient;
+
+    @Value("fetflix-video")
+    private String bucketName ;
 
     public Episode addEpisode(
             Long seasonId,
@@ -82,17 +92,33 @@ public class EpisodeService {
     private void mapFields(
             Episode ep,
             EpisodeRequest req,
-            MultipartFile video,
+            MultipartFile file,
             MultipartFile image
     ) throws IOException {
 
         // ---------- VIDEO UPLOAD ----------
-        if (video != null && !video.isEmpty()) {
-            Map<?, ?> videoUpload = cloudinary.uploader().upload(
-                    video.getBytes(),
-                    ObjectUtils.asMap("resource_type", "video")
+        if (file != null && !file.isEmpty()) {
+
+            String originalFilename = file.getOriginalFilename();
+            String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            String fileName = "videos/" + UUID.randomUUID() + extension;
+
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentLength(file.getSize());
+            metadata.setContentType("video/mp4");
+
+            PutObjectRequest putObjectRequest = new PutObjectRequest(
+                    bucketName,
+                    fileName,
+                    file.getInputStream(),
+                    metadata
             );
-            ep.setEpisodeVideo(videoUpload.get("secure_url").toString());
+
+            // ✅ THIS WAS MISSING
+            storjClient.putObject(putObjectRequest);
+
+            // ✅ store ONLY the key
+            ep.setEpisodeVideo(fileName);
         }
 
         // ---------- IMAGE UPLOAD ----------

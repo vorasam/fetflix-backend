@@ -1,5 +1,9 @@
 package com.dev.movie;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.CannedAccessControlList;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.dev.cast.CastService;
@@ -7,16 +11,19 @@ import com.dev.genre.GenreService;
 import com.dev.scene.SceneService;
 import com.dev.exception.ResourceNotFoundException;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class MovieService {
 
     private final MovieRepository repo;
@@ -24,6 +31,10 @@ public class MovieService {
     private final GenreService genreService;
     private final SceneService sceneService;
     private final Cloudinary cloudinary;
+    private final AmazonS3 storjClient;
+
+    @Value("fetflix-video")
+    private String bucketName ;
 
     // ===================== CREATE =====================
     public Movie createMovie(
@@ -90,31 +101,30 @@ public class MovieService {
     ) throws IOException {
 
         // ---------- VIDEO UPLOAD ----------
-// ---------- VIDEO UPLOAD ----------
-        // In MovieService.mapFields()
-        // ---------- VIDEO UPLOAD ----------
         if (file != null && !file.isEmpty()) {
-            Map<String, Object> options = ObjectUtils.asMap(
-                    "resource_type", "video",
-                    "folder", "fetflix/videos",
-                    "chunk_size", 6000000 // 6MB chunks - critical for large files!
+
+            String originalFilename = file.getOriginalFilename();
+            String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            String fileName = "videos/" + UUID.randomUUID() + extension;
+
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentLength(file.getSize());
+            metadata.setContentType("video/mp4");
+
+            PutObjectRequest putObjectRequest = new PutObjectRequest(
+                    bucketName,
+                    fileName,
+                    file.getInputStream(),
+                    metadata
             );
 
-            // Use InputStream for proper chunked upload
-            Map uploadResult = cloudinary.uploader()
-                    .uploadLarge(file.getInputStream(), options);
+            // ✅ THIS WAS MISSING
+            storjClient.putObject(putObjectRequest);
 
-            // Store just the URL (simplest approach)
-            movie.setMovieVideo(uploadResult.get("secure_url").toString());
-
-            // OR if you need both URL and publicId, use proper JSON:
-            // String videoData = String.format(
-            //     "{\"url\":\"%s\",\"publicId\":\"%s\"}",
-            //     uploadResult.get("secure_url"),
-            //     uploadResult.get("public_id")
-            // );
-            // movie.setMovieVideo(videoData);
+            // ✅ store ONLY the key
+            movie.setMovieVideo(fileName);
         }
+
         // ---------- IMAGE UPLOAD ----------
         if (image != null && !image.isEmpty()) {
             Map<?, ?> imageUpload = cloudinary.uploader().upload(

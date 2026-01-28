@@ -21,7 +21,8 @@ public class Content {
     private String description;
     private int releaseYear;
     private String ageRating;
-    private String poster;
+    @Column(columnDefinition = "TEXT")
+    private String poster; // Cloudinary URL
     @Column(nullable = false)
     private boolean enabled = true;
 
