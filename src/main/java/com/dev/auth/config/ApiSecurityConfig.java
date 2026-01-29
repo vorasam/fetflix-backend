@@ -66,12 +66,14 @@ public class ApiSecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
+                        .requestMatchers("/api/stream/**").permitAll()
                         .requestMatchers(
                                 "/api/movies/**",
                                 "/api/shows/**",
                                 "/api/seasons/**",
                                 "/api/episodes/**"
                         ).permitAll()
+
                         .requestMatchers("/auth/admin/login").permitAll()
                         .requestMatchers("/api/**").hasAnyRole("USER","ADMIN")
                         .requestMatchers("/admin/api/**").hasRole("ADMIN")
