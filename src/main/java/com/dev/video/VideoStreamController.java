@@ -1,14 +1,19 @@
 package com.dev.video;
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.dev.episode.Episode;
 import com.dev.episode.EpisodeRepository;
 import com.dev.movie.Movie;
 import com.dev.movie.MovieRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+
+import java.io.InputStream;
 
 @RestController
 @RequestMapping("/api/stream")
@@ -18,15 +23,28 @@ public class VideoStreamController {
     private final MovieRepository repo;
     private final EpisodeRepository epRepo;
     private final VideoStreamService streamService;
+    private final AmazonS3 storjClient;
 
-    @GetMapping("/movie/{movieId}")
-    public String streamMovie(@PathVariable Long movieId) {
 
-        Movie movie = repo.findById(movieId)
-                .orElseThrow(() -> new RuntimeException("Movie not found"));
+    @GetMapping(value = "/movie/{id}", produces = "video/mp4")
+    public ResponseEntity<StreamingResponseBody> streamMovie(@PathVariable Long id) {
 
-        return streamService.getSignedUrl(movie.getMovieVideo());
+        Movie movie = repo.findById(id).orElseThrow();
+
+        InputStream inputStream = storjClient
+                .getObject("fetflix-video", movie.getMovieVideo())
+                .getObjectContent();
+
+        StreamingResponseBody stream = outputStream -> {
+            inputStream.transferTo(outputStream);
+        };
+
+        return ResponseEntity.ok()
+                .header("Content-Type", "video/mp4")
+                .header("Accept-Ranges", "bytes")
+                .body(stream);
     }
+
 
     @GetMapping("/episode/{epId}")
     public String streamEpisode(@PathVariable Long epid) {

@@ -34,6 +34,7 @@ public class StorjConfig {
                 )
                 .withCredentials(new AWSStaticCredentialsProvider(credentials))
                 .withPathStyleAccessEnabled(true) // Important for Storj
+                .disableChunkedEncoding()          // 🔥 IMPORTANT for stability
                 .build();
     }
 }
