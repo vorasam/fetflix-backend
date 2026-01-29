@@ -22,7 +22,6 @@ public class VideoStreamController {
 
     private final MovieRepository repo;
     private final EpisodeRepository epRepo;
-    private final VideoStreamService streamService;
     private final AmazonS3 storjClient;
 
 
@@ -46,13 +45,23 @@ public class VideoStreamController {
     }
 
 
-    @GetMapping("/episode/{epId}")
-    public String streamEpisode(@PathVariable Long epid) {
+    @GetMapping(value = "/episode/{id}", produces = "video/mp4")
+    public ResponseEntity<StreamingResponseBody> streamEpisode(@PathVariable Long id) {
 
-        Episode episode = epRepo.findById(epid)
-                .orElseThrow(() -> new RuntimeException("Episode not found"));
+        Episode ep = epRepo.findById(id).orElseThrow();
 
-        return streamService.getSignedUrl(episode.getEpisodeVideo());
+        InputStream inputStream = storjClient
+                .getObject("fetflix-video", ep.getEpisodeVideo())
+                .getObjectContent();
+
+        StreamingResponseBody stream = outputStream -> {
+            inputStream.transferTo(outputStream);
+        };
+
+        return ResponseEntity.ok()
+                .header("Content-Type", "video/mp4")
+                .header("Accept-Ranges", "bytes")
+                .body(stream);
     }
 }
 
