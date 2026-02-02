@@ -5,6 +5,7 @@ import com.dev.movie.Movie;
 import com.dev.season.Season;
 import com.dev.show.Show;
 import lombok.AllArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,48 +15,51 @@ import java.util.List;
 @AllArgsConstructor
 public class UserShowController {
 
-    private final UserShow service ;
+    private final UserShow service;
 
-
+    // ================= MOVIES =================
 
     @GetMapping("/movies")
-    public List<Movie> getAllMovies() {
-        return service.getAllMovies();
+    public List<Movie> getAllMovies(Authentication auth) {
+        return service.getAllMovies(auth);
     }
 
     @GetMapping("/movies/search")
-    public List<Movie> searchMovies(@RequestParam("q") String q) {
-        return service.searchMovies(q);
+    public List<Movie> searchMovies(
+            @RequestParam("q") String q,
+            Authentication auth) {
+        return service.searchMovies(q, auth);
+    }
+
+    // ================= SHOWS =================
+
+    @GetMapping("/shows")
+    public List<Show> getAllShows(Authentication auth) {
+        return service.getAllShows(auth);
     }
 
     @GetMapping("/shows/search")
-    public List<Show> searchShows(@RequestParam("q") String q) {
-        return service.searchShows(q);
+    public List<Show> searchShows(
+            @RequestParam("q") String q,
+            Authentication auth) {
+        return service.searchShows(q, auth);
     }
 
-//    @GetMapping("/movie/{id}")
-//    public Movie getMovie(@PathVariable Long id) {
-//        return service.getMovie(id);
-//    }
-
-    @GetMapping("/shows")
-    public List<Show> getAllShows() {
-        return service.getAllShows();
-    }
-
-//    @GetMapping("show/{id}")
-//    public Show getShow(@PathVariable Long id) {
-//        return service.getShow(id);
-//    }
+    // ================= SEASONS =================
 
     @GetMapping("/seasons/show/{showId}")
-    public List<Season> getSeasons(@PathVariable Long showId) {
-        return service.getSeasons(showId);
+    public List<Season> getSeasons(
+            @PathVariable Long showId,
+            Authentication auth) {
+        return service.getSeasons(showId, auth);
     }
 
+    // ================= EPISODES =================
 
     @GetMapping("/episodes/season/{seasonId}")
-    public List<Episode> getEpisodes(@PathVariable Long seasonId) {
-        return service.getEpisodes(seasonId);
+    public List<Episode> getEpisodes(
+            @PathVariable Long seasonId,
+            Authentication auth) {
+        return service.getEpisodes(seasonId, auth);
     }
 }

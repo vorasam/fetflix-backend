@@ -1,11 +1,13 @@
 package com.dev.user;
 
+import com.dev.Payment.PlanType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -26,6 +28,12 @@ public class User implements UserDetails {
     private String name;
     private String picture;
     private String provider;
+    @Enumerated(EnumType.STRING)
+    private PlanType plan;
+
+    private boolean paymentDone;
+
+    private LocalDateTime planExpiry;
 
     @Column(nullable = false)
     private boolean enabled = true;
